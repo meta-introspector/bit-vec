@@ -446,14 +446,14 @@ impl<B: BitBlock> BitVec<B> {
 
     /// Iterator over mutable refs to the underlying blocks of data.
     #[inline]
-    fn blocks_mut(&mut self) -> MutBlocks<B> {
+    fn blocks_mut(&mut self) -> MutBlocks<'_, B> {
         // (2)
         self.storage.iter_mut()
     }
 
     /// Iterator over the underlying blocks of data
     #[inline]
-    pub fn blocks(&self) -> Blocks<B> {
+    pub fn blocks(&self) -> Blocks<'_, B> {
         // (2)
         Blocks {
             iter: self.storage.iter(),
@@ -614,7 +614,7 @@ impl<B: BitBlock> BitVec<B> {
     /// assert_eq!(bv, BitVec::from_bytes(&[0b10100000]));
     /// ```
     #[inline]
-    pub fn get_mut(&mut self, index: usize) -> Option<MutBorrowedBit<B>> {
+    pub fn get_mut(&mut self, index: usize) -> Option<MutBorrowedBit<'_, B>> {
         self.get(index).map(move |value| MutBorrowedBit {
             vec: Rc::new(RefCell::new(self)),
             index,
@@ -644,7 +644,7 @@ impl<B: BitBlock> BitVec<B> {
     /// assert_eq!(bv, BitVec::from_bytes(&[0b10100000]));
     /// ```
     #[inline]
-    pub unsafe fn get_unchecked_mut(&mut self, index: usize) -> MutBorrowedBit<B> {
+    pub unsafe fn get_unchecked_mut(&mut self, index: usize) -> MutBorrowedBit<'_, B> {
         let value = self.get_unchecked(index);
         MutBorrowedBit {
             #[cfg(debug_assertions)]
@@ -826,7 +826,7 @@ impl<B: BitBlock> BitVec<B> {
     pub fn or(&mut self, other: &Self) -> bool {
         self.ensure_invariant();
         debug_assert!(other.is_last_block_fixed());
-        self.process(other, |w1, w2| (w1 | w2))
+        self.process(other, |w1, w2| w1 | w2)
     }
 
     /// Calculates the bitwise `and` of two bitvectors.
@@ -857,7 +857,7 @@ impl<B: BitBlock> BitVec<B> {
     pub fn and(&mut self, other: &Self) -> bool {
         self.ensure_invariant();
         debug_assert!(other.is_last_block_fixed());
-        self.process(other, |w1, w2| (w1 & w2))
+        self.process(other, |w1, w2| w1 & w2)
     }
 
     /// Calculates the difference between two bitvectors.
@@ -896,7 +896,7 @@ impl<B: BitBlock> BitVec<B> {
     pub fn difference(&mut self, other: &Self) -> bool {
         self.ensure_invariant();
         debug_assert!(other.is_last_block_fixed());
-        self.process(other, |w1, w2| (w1 & !w2))
+        self.process(other, |w1, w2| w1 & !w2)
     }
 
     /// Calculates the xor of two bitvectors.
@@ -927,7 +927,7 @@ impl<B: BitBlock> BitVec<B> {
     pub fn xor(&mut self, other: &Self) -> bool {
         self.ensure_invariant();
         debug_assert!(other.is_last_block_fixed());
-        self.process(other, |w1, w2| (w1 ^ w2))
+        self.process(other, |w1, w2| w1 ^ w2)
     }
 
     /// Calculates the nand of two bitvectors.
@@ -1119,7 +1119,7 @@ impl<B: BitBlock> BitVec<B> {
     /// assert_eq!(bv.iter().filter(|x| *x).count(), 7);
     /// ```
     #[inline]
-    pub fn iter(&self) -> Iter<B> {
+    pub fn iter(&self) -> Iter<'_, B> {
         self.ensure_invariant();
         Iter {
             bit_vec: self,
@@ -1143,7 +1143,7 @@ impl<B: BitBlock> BitVec<B> {
     /// ]));
     /// ```
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<B> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, B> {
         self.ensure_invariant();
         let nbits = self.nbits;
         IterMut {
